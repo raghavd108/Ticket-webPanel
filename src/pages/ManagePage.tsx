@@ -5,7 +5,6 @@ import {
   BriefcaseBusiness,
   Building2,
   CalendarDays,
-  ClipboardCheck,
   ChevronRight,
   ChevronDown,
   Layers,

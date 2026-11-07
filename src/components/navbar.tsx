@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
-  Menu,
   Search,
   CalendarDays,
   Bell,
@@ -10,7 +9,6 @@ import {
   LogOut,
   UserRound,
   Settings,
-  Ticket,
 } from "lucide-react";
 
 import type { AuthUser } from "../types/auth";

@@ -963,7 +963,7 @@ export default function Tickets() {
               </thead>
 
               <tbody className="divide-y divide-gray-100">
-                {filteredTickets.map((ticket, index) => (
+                {filteredTickets.map((ticket) => (
                   <tr key={ticket._id} className="transition hover:bg-gray-50">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
