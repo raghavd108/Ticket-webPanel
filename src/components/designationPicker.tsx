@@ -286,9 +286,7 @@ const DesignationPicker: React.FC<Props> = ({
   // CREATE DESIGNATION
   // =====================================================
 
-  const createDesignation = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const createDesignation = async () => {
     const name = newName.trim();
 
     if (!canCreateDesignation) {
@@ -413,9 +411,7 @@ const DesignationPicker: React.FC<Props> = ({
   // UPDATE DESIGNATION
   // =====================================================
 
-  const updateDesignation = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const updateDesignation = async () => {
     if (!isSuperAdmin || editingId === null) {
       setError("Only SuperAdmin can edit designation permissions.");
       return;
@@ -702,10 +698,7 @@ const DesignationPicker: React.FC<Props> = ({
       {/* EDIT DESIGNATION FORM */}
 
       {editingId !== null && isSuperAdmin && (
-        <form
-          onSubmit={updateDesignation}
-          className="space-y-4 rounded-2xl border border-(--theme-border) bg-(--theme-white) p-5 shadow-sm dark:border-(--theme-border) dark:bg-(--theme-white)"
-        >
+        <div className="space-y-4 rounded-2xl border border-(--theme-border) bg-(--theme-white) p-5 shadow-sm dark:border-(--theme-border) dark:bg-(--theme-white)">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-base font-bold text-(--theme-ink) dark:text-(--theme-ink)">
@@ -762,7 +755,8 @@ const DesignationPicker: React.FC<Props> = ({
             </button>
 
             <button
-              type="submit"
+              type="button"
+              onClick={() => void updateDesignation()}
               disabled={saving}
               className="inline-flex items-center gap-2 rounded-xl bg-(--theme-primary) px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-(--theme-primary-dark) disabled:opacity-60"
             >
@@ -770,16 +764,13 @@ const DesignationPicker: React.FC<Props> = ({
               Save Changes
             </button>
           </div>
-        </form>
+        </div>
       )}
 
       {/* CREATE DESIGNATION FORM */}
 
       {adding && canCreateDesignation && (
-        <form
-          onSubmit={createDesignation}
-          className="space-y-4 rounded-2xl border border-(--theme-border) bg-(--theme-white) p-5 shadow-sm dark:border-(--theme-border) dark:bg-(--theme-white)"
-        >
+        <div className="space-y-4 rounded-2xl border border-(--theme-border) bg-(--theme-white) p-5 shadow-sm dark:border-(--theme-border) dark:bg-(--theme-white)">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-base font-bold text-(--theme-ink) dark:text-(--theme-ink)">
@@ -889,7 +880,8 @@ const DesignationPicker: React.FC<Props> = ({
             </button>
 
             <button
-              type="submit"
+              type="button"
+              onClick={() => void createDesignation()}
               disabled={saving || !newName.trim()}
               className="inline-flex items-center gap-2 rounded-xl bg-(--theme-primary) px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-(--theme-primary-dark) disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -906,7 +898,7 @@ const DesignationPicker: React.FC<Props> = ({
               )}
             </button>
           </div>
-        </form>
+        </div>
       )}
     </div>
   );
