@@ -38,7 +38,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       />
 
       {/* MAIN CONTENT */}
-      <div className="min-h-screen md:pl-[250px]">
+      <div className="min-h-screen md:pl-62.5">
         <Header
           user={user}
           onMenuClick={() => setSidebarOpen((prev) => !prev)}

@@ -23,7 +23,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({
   user,
-  onMenuClick,
+
   onLogout,
   notificationCount = 0,
 }) => {
