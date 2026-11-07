@@ -154,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           backgroundColor: theme.white,
           borderColor: theme.border,
         }}
-        className={`fixed inset-y-0 left-0 z-50 flex w-[250px] flex-col border-r transition-transform duration-200 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-62.5 flex-col border-r transition-transform duration-200 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >

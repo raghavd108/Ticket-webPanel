@@ -62,6 +62,47 @@ const getId = (user: User) => String(user._id || user.id);
 const getError = (error: any) =>
   error?.response?.data?.message || error?.message || "Something went wrong.";
 
+const Modal = ({
+  title,
+  children,
+  onClose,
+  width = "max-w-xl",
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  width?: string;
+}) => (
+  <div
+    className="um-modal-backdrop fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+    onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}
+  >
+    <div
+      className={`um-modal-panel my-auto flex max-h-[90vh] w-full ${width} flex-col overflow-hidden rounded-2xl bg-white shadow-2xl`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div className="um-modal-header flex shrink-0 items-center justify-between border-b border-gray-100 bg-white px-6 py-5">
+        <h2 className="min-w-0 text-lg font-bold text-gray-900">{title}</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close modal"
+          className="ml-4 shrink-0 rounded-lg px-3 py-1.5 text-xl text-gray-400 hover:bg-gray-100 hover:text-gray-800"
+        >
+          ×
+        </button>
+      </div>
+      <div className="um-modal-body min-h-0 flex-1 overflow-y-auto overscroll-contain p-6">
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
 export default function UserManagement() {
   const { user: currentUser, loading: authLoading } = useAuth();
   const { theme } = useTheme();
@@ -312,8 +353,12 @@ export default function UserManagement() {
 
       notify("User account created successfully.");
 
+      setForm({
+        ...initialForm,
+        organisation:
+          createRole === "employee" ? spinfocomOrganisation?._id || "" : "",
+      });
       setShowUserModal(false);
-      setForm(initialForm);
 
       await Promise.all([getUsers(), getEmployees()]);
     } catch (error) {
@@ -681,47 +726,6 @@ export default function UserManagement() {
   const secondaryButton =
     "um-secondary-button inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition";
 
-  const Modal = ({
-    title,
-    children,
-    onClose,
-    width = "max-w-xl",
-  }: {
-    title: string;
-    children: React.ReactNode;
-    onClose: () => void;
-    width?: string;
-  }) => (
-    <div
-      className="um-modal-backdrop fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div
-        className={`um-modal-panel my-auto flex max-h-[90vh] w-full ${width} flex-col overflow-hidden rounded-2xl bg-white shadow-2xl`}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
-        <div className="um-modal-header flex shrink-0 items-center justify-between border-b border-gray-100 bg-white px-6 py-5">
-          <h2 className="min-w-0 text-lg font-bold text-gray-900">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close modal"
-            className="ml-4 shrink-0 rounded-lg px-3 py-1.5 text-xl text-gray-400 hover:bg-gray-100 hover:text-gray-800"
-          >
-            ×
-          </button>
-        </div>
-        <div className="um-modal-body min-h-0 flex-1 overflow-y-auto overscroll-contain p-6">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-
   // =====================================================
   // ACCESS CONTROL
   // =====================================================
@@ -907,7 +911,7 @@ export default function UserManagement() {
           .um-page .um-modal-body { padding: 18px; }
         }
       `}</style>
-      <div className="mx-auto max-w-[1500px] space-y-6">
+      <div className="mx-auto max-w-375 space-y-6">
         {/* HEADER */}
 
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -1040,7 +1044,7 @@ export default function UserManagement() {
           {/* TABLE */}
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[850px] text-left">
+            <table className="w-full min-w-212.5 text-left">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   <th className="px-6 py-4 font-semibold">User</th>

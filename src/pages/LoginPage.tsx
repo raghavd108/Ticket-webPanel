@@ -119,7 +119,7 @@ const LoginPage = () => {
       style={{ backgroundColor: theme.background }}
     >
       <div
-        className="w-full max-w-[1100px] min-h-[650px] rounded-[28px] overflow-hidden shadow-[0_20px_80px_rgba(38,38,30,0.08)] grid grid-cols-1 lg:grid-cols-2"
+        className="w-full max-w-275 min-h-162.5 rounded-[28px] overflow-hidden shadow-[0_20px_80px_rgba(38,38,30,0.08)] grid grid-cols-1 lg:grid-cols-2"
         style={{ backgroundColor: theme.white }}
       >
         {/* LEFT BRAND PANEL */}
@@ -179,7 +179,7 @@ const LoginPage = () => {
 
           <div className="relative z-10 max-w-md">
             <div
-              className="w-12 h-[3px] mb-8"
+              className="w-12 h-0.75 mb-8"
               style={{ backgroundColor: theme.primary }}
             />
 
@@ -239,7 +239,7 @@ const LoginPage = () => {
 
         {/* RIGHT LOGIN PANEL */}
         <section className="flex items-center justify-center px-6 py-12 sm:px-12 lg:px-14 xl:px-20">
-          <div className="w-full max-w-[390px]">
+          <div className="w-full max-w-97.5">
             {/* MOBILE BRANDING */}
             <div className="lg:hidden mb-12 flex items-center gap-3">
               <div
@@ -340,7 +340,7 @@ const LoginPage = () => {
                       setUserName(e.target.value);
                       clearMessage();
                     }}
-                    className="w-full h-[54px] pl-12 pr-4 rounded-xl border text-sm outline-none transition-all focus:ring-4 disabled:opacity-60"
+                    className="w-full h-13.5 pl-12 pr-4 rounded-xl border text-sm outline-none transition-all focus:ring-4 disabled:opacity-60"
                     style={{
                       backgroundColor: theme.input,
                       borderColor: theme.border,
@@ -380,7 +380,7 @@ const LoginPage = () => {
                       setPassword(e.target.value);
                       clearMessage();
                     }}
-                    className="w-full h-[54px] pl-12 pr-12 rounded-xl border text-sm outline-none transition-all focus:ring-4 disabled:opacity-60"
+                    className="w-full h-13.5 pl-12 pr-12 rounded-xl border text-sm outline-none transition-all focus:ring-4 disabled:opacity-60"
                     style={{
                       backgroundColor: theme.input,
                       borderColor: theme.border,
@@ -426,7 +426,7 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="group w-full h-[54px] rounded-xl text-white flex items-center justify-center gap-3 font-semibold text-sm transition-all hover:shadow-lg active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                className="group w-full h-13.5 rounded-xl text-white flex items-center justify-center gap-3 font-semibold text-sm transition-all hover:shadow-lg active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
                 style={{
                   backgroundColor: theme.dark,
                   color: theme.everWhite,

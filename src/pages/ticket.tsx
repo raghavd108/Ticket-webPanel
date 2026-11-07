@@ -949,7 +949,7 @@ export default function Tickets() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[850px] text-left">
+            <table className="w-full min-w-212.5 text-left">
               <thead className="bg-gray-50">
                 <tr className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                   <th className="px-5 py-4">Ticket</th>
@@ -975,7 +975,7 @@ export default function Tickets() {
                           <p className="font-semibold text-gray-900">
                             {ticket.module}
                           </p>
-                          <p className="mt-1 max-w-[230px] truncate text-xs text-gray-500">
+                          <p className="mt-1 max-w-57.5 truncate text-xs text-gray-500">
                             {ticket.problem}
                           </p>
                           {ticket.image?.length ? (
@@ -1404,7 +1404,7 @@ export default function Tickets() {
 
       {attachmentPreview && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-5"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/90 p-5"
           onClick={() => setAttachmentPreview("")}
         >
           <button

@@ -509,7 +509,7 @@ const ManagePage = () => {
               key={item.title}
               type="button"
               onClick={() => handleManagementClick(item)}
-              className="group flex min-h-[190px] flex-col rounded-2xl border p-6 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+              className="group flex min-h-47.5 flex-col rounded-2xl border p-6 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
               style={{
                 borderColor: theme.border,
                 background: theme.white,

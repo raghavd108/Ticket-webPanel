@@ -679,7 +679,7 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-4 dark:border-white/5 dark:bg-white/[0.03]">
+            <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-4 dark:border-white/5 dark:bg-white/3">
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Organisation Name
               </p>
@@ -849,7 +849,7 @@ const ProfilePage = () => {
       {/* EMPLOYEE LEAVE REQUEST MODAL */}
       {isEmployee && leaveModalOpen && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-5"
+          className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-5"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
               setLeaveModalOpen(false);
@@ -1037,7 +1037,7 @@ const InfoItem = ({
 
     <div className="min-w-0">
       <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="mt-1 break-words text-sm font-semibold text-gray-900 dark:text-white">
+      <p className="mt-1 wrap-break-word text-sm font-semibold text-gray-900 dark:text-white">
         {value || "Not available"}
       </p>
     </div>

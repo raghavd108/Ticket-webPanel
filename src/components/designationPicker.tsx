@@ -33,11 +33,9 @@ type Props = {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-
   isSuperAdmin?: boolean;
   canManageUsers?: boolean;
   managementLevel?: number;
-
   allowCreate?: boolean;
   className?: string;
 };
@@ -116,13 +114,13 @@ const ToggleRow = ({
   onChange: (value: boolean) => void;
   disabled?: boolean;
 }) => (
-  <div className="flex items-center justify-between gap-4 border-b border-[var(--theme-border)] py-3 last:border-0 dark:border-[var(--theme-border)]">
+  <div className="flex items-center justify-between gap-4 border-b border-(--theme-border) py-3 last:border-0 dark:border-(--theme-border)">
     <div className="min-w-0">
-      <p className="text-sm font-semibold text-[var(--theme-ink)] dark:text-[var(--theme-ink)]">
+      <p className="text-sm font-semibold text-(--theme-ink) dark:text-(--theme-ink)">
         {title}
       </p>
 
-      <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)] dark:text-[var(--theme-muted)]">
+      <p className="mt-1 text-xs leading-5 text-(--theme-muted) dark:text-(--theme-muted)">
         {description}
       </p>
     </div>
@@ -133,12 +131,12 @@ const ToggleRow = ({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-        checked ? "bg-[var(--theme-primary)]" : "bg-[var(--theme-border)]"
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-primary) focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+        checked ? "bg-(--theme-primary)" : "bg-(--theme-border)"
       }`}
     >
       <span
-        className={`pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-[var(--theme-white)] shadow-sm transition-transform duration-200 ease-in-out ${
+        className={`pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-(--theme-white) shadow-sm transition-transform duration-200 ease-in-out ${
           checked ? "translate-x-5" : "translate-x-0"
         }`}
       />
@@ -339,13 +337,9 @@ const DesignationPicker: React.FC<Props> = ({
         ...(isSuperAdmin
           ? {
               canViewAllTickets: newPermissions.canViewAllTickets,
-
               canManageUsers: newPermissions.canManageUsers,
-
               canPublishOffers: newPermissions.canPublishOffers,
-
               canNotifyEmployees: newPermissions.canNotifyEmployees,
-
               managementLevel: level,
             }
           : {}),
@@ -550,7 +544,7 @@ const DesignationPicker: React.FC<Props> = ({
       {error && (
         <div
           role="alert"
-          className="flex items-start justify-between gap-3 rounded-xl border border-[var(--theme-danger)]/30 bg-[var(--theme-danger-soft)] px-4 py-3 text-sm text-[var(--theme-danger)] dark:border-[var(--theme-danger)]/40 dark:bg-[var(--theme-danger-soft)] dark:text-[var(--theme-danger)]"
+          className="flex items-start justify-between gap-3 rounded-xl border border-(--theme-danger)/30 bg-(--theme-danger-soft) px-4 py-3 text-sm text-(--theme-danger) dark:border-(--theme-danger)/40 dark:bg-(--theme-danger-soft) dark:text-(--theme-danger)"
         >
           <span>{error}</span>
 
@@ -567,7 +561,7 @@ const DesignationPicker: React.FC<Props> = ({
       {success && (
         <div
           role="status"
-          className="flex items-center justify-between gap-3 rounded-xl border border-[var(--theme-success)]/30 bg-[var(--theme-success-soft)] px-4 py-3 text-sm text-[var(--theme-success)] dark:border-[var(--theme-success)]/40 dark:bg-[var(--theme-success-soft)] dark:text-[var(--theme-success)]"
+          className="flex items-center justify-between gap-3 rounded-xl border border-(--theme-success)/30 bg-(--theme-success-soft) px-4 py-3 text-sm text-(--theme-success) dark:border-(--theme-success)/40 dark:bg-(--theme-success-soft) dark:text-(--theme-success)"
         >
           <span>{success}</span>
 
@@ -585,7 +579,7 @@ const DesignationPicker: React.FC<Props> = ({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <label className="text-sm font-semibold text-[var(--theme-ink)] dark:text-[var(--theme-ink)]">
+          <label className="text-sm font-semibold text-(--theme-ink) dark:text-(--theme-ink)">
             Designation
           </label>
 
@@ -593,7 +587,7 @@ const DesignationPicker: React.FC<Props> = ({
             type="button"
             onClick={load}
             disabled={loading}
-            className="flex items-center gap-1.5 text-xs font-medium text-[var(--theme-muted)] transition hover:text-[var(--theme-primary)] disabled:opacity-50"
+            className="flex items-center gap-1.5 text-xs font-medium text-(--theme-muted) transition hover:text-(--theme-primary) disabled:opacity-50"
           >
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
             Refresh
@@ -601,7 +595,7 @@ const DesignationPicker: React.FC<Props> = ({
         </div>
 
         {loading ? (
-          <div className="flex items-center gap-2 py-5 text-sm text-[var(--theme-muted)]">
+          <div className="flex items-center gap-2 py-5 text-sm text-(--theme-muted)">
             <Loader2 size={17} className="animate-spin" />
             Loading designations...
           </div>
@@ -609,7 +603,7 @@ const DesignationPicker: React.FC<Props> = ({
           <button
             type="button"
             onClick={load}
-            className="rounded-lg border border-[var(--theme-border)] px-4 py-3 text-sm font-medium text-[var(--theme-primary)] hover:bg-[var(--theme-background)] dark:border-[var(--theme-border)]"
+            className="rounded-lg border border-(--theme-border) px-4 py-3 text-sm font-medium text-(--theme-primary) hover:bg-(--theme-background) dark:border-(--theme-border)"
           >
             Retry loading designations
           </button>
@@ -632,8 +626,8 @@ const DesignationPicker: React.FC<Props> = ({
                   aria-pressed={isSelected}
                   className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
                     isSelected
-                      ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-white shadow-sm"
-                      : "border-[var(--theme-border)] bg-[var(--theme-white)] text-[var(--theme-text)] hover:border-[var(--theme-primary)] hover:bg-[var(--theme-background)] dark:border-[var(--theme-border)] dark:bg-[var(--theme-white)] dark:text-[var(--theme-text)] dark:hover:border-[var(--theme-primary)]"
+                      ? "border-(--theme-primary) bg-(--theme-primary) text-white shadow-sm"
+                      : "border-(--theme-border) bg-(--theme-white) text-(--theme-text) hover:border-(--theme-primary) hover:bg-(--theme-background) dark:border-(--theme-border) dark:bg-(--theme-white) dark:text-(--theme-text) dark:hover:border-(--theme-primary)"
                   }`}
                 >
                   {isSelected && <Check size={14} />}
@@ -643,7 +637,7 @@ const DesignationPicker: React.FC<Props> = ({
             })}
 
             {availableDesignations.length === 0 && (
-              <p className="py-2 text-sm text-[var(--theme-muted)]">
+              <p className="py-2 text-sm text-(--theme-muted)">
                 No available designations.
               </p>
             )}
@@ -659,7 +653,7 @@ const DesignationPicker: React.FC<Props> = ({
                   setError("");
                   setSuccess("");
                 }}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-dashed border-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary)] transition hover:bg-[var(--theme-primary-soft)]"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-dashed border-(--theme-primary) px-4 py-2 text-sm font-semibold text-(--theme-primary) transition hover:bg-(--theme-primary-soft)"
               >
                 <Plus size={15} />
                 New
@@ -672,22 +666,22 @@ const DesignationPicker: React.FC<Props> = ({
       {/* SELECTED DESIGNATION DETAILS */}
 
       {selected && !adding && editingId === null && (
-        <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-background)] p-4 dark:border-[var(--theme-border)] dark:bg-[var(--theme-white)]">
+        <div className="rounded-xl border border-(--theme-border) bg-(--theme-background) p-4 dark:border-(--theme-border) dark:bg-(--theme-white)">
           <div className="flex items-center gap-2">
-            <ShieldCheck size={17} className="text-[var(--theme-primary)]" />
+            <ShieldCheck size={17} className="text-(--theme-primary)" />
 
-            <h4 className="text-sm font-bold text-[var(--theme-ink)] dark:text-[var(--theme-ink)]">
+            <h4 className="text-sm font-bold text-(--theme-ink) dark:text-(--theme-ink)">
               {selected.name}
             </h4>
           </div>
 
-          <p className="mt-2 text-xs leading-5 text-[var(--theme-muted)] dark:text-[var(--theme-muted)]">
+          <p className="mt-2 text-xs leading-5 text-(--theme-muted) dark:text-(--theme-muted)">
             {getDesignationDescription(selected)}
           </p>
 
           {isSuperAdmin && (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--theme-border)] pt-3 dark:border-[var(--theme-border)]">
-              <span className="text-xs font-semibold text-[var(--theme-primary)]">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-(--theme-border) pt-3 dark:border-(--theme-border)">
+              <span className="text-xs font-semibold text-(--theme-primary)">
                 Management level: {selected.managementLevel}
               </span>
 
@@ -695,7 +689,7 @@ const DesignationPicker: React.FC<Props> = ({
                 type="button"
                 onClick={() => startEditing(selected)}
                 disabled={saving || disabled}
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--theme-primary)]/40 px-3 py-2 text-xs font-semibold text-[var(--theme-primary)] transition hover:bg-[var(--theme-primary-soft)] disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg border border-(--theme-primary)/40 px-3 py-2 text-xs font-semibold text-(--theme-primary) transition hover:bg-(--theme-primary-soft) disabled:opacity-50"
               >
                 <Pencil size={13} />
                 Edit Permissions
@@ -710,15 +704,15 @@ const DesignationPicker: React.FC<Props> = ({
       {editingId !== null && isSuperAdmin && (
         <form
           onSubmit={updateDesignation}
-          className="space-y-4 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-white)] p-5 shadow-sm dark:border-[var(--theme-border)] dark:bg-[var(--theme-white)]"
+          className="space-y-4 rounded-2xl border border-(--theme-border) bg-(--theme-white) p-5 shadow-sm dark:border-(--theme-border) dark:bg-(--theme-white)"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-[var(--theme-ink)] dark:text-[var(--theme-ink)]">
+              <h3 className="text-base font-bold text-(--theme-ink) dark:text-(--theme-ink)">
                 Edit Designation Permissions
               </h3>
 
-              <p className="mt-1 text-xs text-[var(--theme-muted)]">
+              <p className="mt-1 text-xs text-(--theme-muted)">
                 Changes apply to all users assigned to this designation.
               </p>
             </div>
@@ -727,7 +721,7 @@ const DesignationPicker: React.FC<Props> = ({
               type="button"
               onClick={cancelEditing}
               disabled={saving}
-              className="rounded-lg p-2 text-[var(--theme-muted)] transition hover:bg-[var(--theme-background)] dark:hover:bg-[var(--theme-background)]"
+              className="rounded-lg p-2 text-(--theme-muted) transition hover:bg-(--theme-background) dark:hover:bg-(--theme-background)"
               aria-label="Close edit form"
             >
               <X size={18} />
@@ -737,7 +731,7 @@ const DesignationPicker: React.FC<Props> = ({
           {renderPermissionOptions(editPermissions, updateEditPermission, true)}
 
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[var(--theme-ink)] dark:text-[var(--theme-ink)]">
+            <label className="block text-sm font-semibold text-(--theme-ink) dark:text-(--theme-ink)">
               Management Level
             </label>
 
@@ -749,20 +743,20 @@ const DesignationPicker: React.FC<Props> = ({
               value={editManagementLevel}
               onChange={(e) => setEditManagementLevel(e.target.value)}
               disabled={saving}
-              className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-background)] px-4 py-3 text-sm text-[var(--theme-ink)] outline-none transition focus:border-[var(--theme-primary)] dark:border-[var(--theme-border)] dark:bg-[var(--theme-input)] dark:text-white"
+              className="w-full rounded-xl border border-(--theme-border) bg-(--theme-background) px-4 py-3 text-sm text-(--theme-ink) outline-none transition focus:border-(--theme-primary) dark:border-(--theme-border) dark:bg-(--theme-input) dark:text-white"
             />
 
-            <p className="text-xs text-[var(--theme-muted)]">
+            <p className="text-xs text-(--theme-muted)">
               Higher numbers represent greater management authority.
             </p>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-[var(--theme-border)] pt-4 dark:border-[var(--theme-border)]">
+          <div className="flex justify-end gap-3 border-t border-(--theme-border) pt-4 dark:border-(--theme-border)">
             <button
               type="button"
               onClick={cancelEditing}
               disabled={saving}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-[var(--theme-muted)] hover:bg-[var(--theme-background)] dark:hover:bg-[var(--theme-background)]"
+              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-(--theme-muted) hover:bg-(--theme-background) dark:hover:bg-(--theme-background)"
             >
               Cancel
             </button>
@@ -770,7 +764,7 @@ const DesignationPicker: React.FC<Props> = ({
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--theme-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--theme-primary-dark)] disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-xl bg-(--theme-primary) px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-(--theme-primary-dark) disabled:opacity-60"
             >
               {saving && <Loader2 size={15} className="animate-spin" />}
               Save Changes
@@ -784,15 +778,15 @@ const DesignationPicker: React.FC<Props> = ({
       {adding && canCreateDesignation && (
         <form
           onSubmit={createDesignation}
-          className="space-y-4 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-white)] p-5 shadow-sm dark:border-[var(--theme-border)] dark:bg-[var(--theme-white)]"
+          className="space-y-4 rounded-2xl border border-(--theme-border) bg-(--theme-white) p-5 shadow-sm dark:border-(--theme-border) dark:bg-(--theme-white)"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-[var(--theme-ink)] dark:text-[var(--theme-ink)]">
+              <h3 className="text-base font-bold text-(--theme-ink) dark:text-(--theme-ink)">
                 New Designation
               </h3>
 
-              <p className="mt-1 text-xs text-[var(--theme-muted)]">
+              <p className="mt-1 text-xs text-(--theme-muted)">
                 Configure designation name and permissions.
               </p>
             </div>
@@ -801,7 +795,7 @@ const DesignationPicker: React.FC<Props> = ({
               type="button"
               onClick={resetCreateForm}
               disabled={saving}
-              className="rounded-lg p-2 text-[var(--theme-muted)] transition hover:bg-[var(--theme-background)] dark:hover:bg-[var(--theme-background)]"
+              className="rounded-lg p-2 text-(--theme-muted) transition hover:bg-(--theme-background) dark:hover:bg-(--theme-background)"
               aria-label="Close create form"
             >
               <X size={18} />
@@ -811,7 +805,7 @@ const DesignationPicker: React.FC<Props> = ({
           {/* DESIGNATION NAME */}
 
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[var(--theme-ink)] dark:text-[var(--theme-ink)]">
+            <label className="block text-sm font-semibold text-(--theme-ink) dark:text-(--theme-ink)">
               Designation Name
             </label>
 
@@ -822,7 +816,7 @@ const DesignationPicker: React.FC<Props> = ({
               placeholder="e.g. Project Manager"
               autoCapitalize="words"
               disabled={saving}
-              className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-background)] px-4 py-3 text-sm text-[var(--theme-ink)] outline-none transition placeholder:text-[var(--theme-light)] focus:border-[var(--theme-primary)] dark:border-[var(--theme-border)] dark:bg-[var(--theme-input)] dark:text-white"
+              className="w-full rounded-xl border border-(--theme-border) bg-(--theme-background) px-4 py-3 text-sm text-(--theme-ink) outline-none transition placeholder:text-(--theme-light) focus:border-(--theme-primary) dark:border-(--theme-border) dark:bg-(--theme-input) dark:text-white"
             />
           </div>
 
@@ -833,14 +827,11 @@ const DesignationPicker: React.FC<Props> = ({
           {/* SUPERADMIN PERMISSIONS */}
 
           {isSuperAdmin && (
-            <div className="space-y-3 border-t border-[var(--theme-border)] pt-4 dark:border-[var(--theme-border)]">
+            <div className="space-y-3 border-t border-(--theme-border) pt-4 dark:border-(--theme-border)">
               <div className="flex items-center gap-2">
-                <LockKeyhole
-                  size={15}
-                  className="text-[var(--theme-primary)]"
-                />
+                <LockKeyhole size={15} className="text-(--theme-primary)" />
 
-                <h4 className="text-sm font-bold text-[var(--theme-primary)]">
+                <h4 className="text-sm font-bold text-(--theme-primary)">
                   SuperAdmin Permissions
                 </h4>
               </div>
@@ -863,7 +854,7 @@ const DesignationPicker: React.FC<Props> = ({
               {/* MANAGEMENT LEVEL */}
 
               <div className="space-y-2 pt-2">
-                <label className="block text-sm font-semibold text-[var(--theme-ink)] dark:text-[var(--theme-ink)]">
+                <label className="block text-sm font-semibold text-(--theme-ink) dark:text-(--theme-ink)">
                   Management Level
                 </label>
 
@@ -875,10 +866,10 @@ const DesignationPicker: React.FC<Props> = ({
                   value={newManagementLevel}
                   onChange={(e) => setNewManagementLevel(e.target.value)}
                   disabled={saving}
-                  className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-background)] px-4 py-3 text-sm text-[var(--theme-ink)] outline-none focus:border-[var(--theme-primary)] dark:border-[var(--theme-border)] dark:bg-[var(--theme-input)] dark:text-white"
+                  className="w-full rounded-xl border border-(--theme-border) bg-(--theme-background) px-4 py-3 text-sm text-(--theme-ink) outline-none focus:border-(--theme-primary) dark:border-(--theme-border) dark:bg-(--theme-input) dark:text-white"
                 />
 
-                <p className="text-xs text-[var(--theme-muted)]">
+                <p className="text-xs text-(--theme-muted)">
                   Higher numbers represent greater management authority.
                 </p>
               </div>
@@ -887,12 +878,12 @@ const DesignationPicker: React.FC<Props> = ({
 
           {/* ACTION BUTTONS */}
 
-          <div className="flex justify-end gap-3 border-t border-[var(--theme-border)] pt-4">
+          <div className="flex justify-end gap-3 border-t border-(--theme-border) pt-4">
             <button
               type="button"
               onClick={resetCreateForm}
               disabled={saving}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-[var(--theme-muted)] hover:bg-[var(--theme-background)] dark:hover:bg-[var(--theme-background)]"
+              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-(--theme-muted) hover:bg-(--theme-background) dark:hover:bg-(--theme-background)"
             >
               Cancel
             </button>
@@ -900,7 +891,7 @@ const DesignationPicker: React.FC<Props> = ({
             <button
               type="submit"
               disabled={saving || !newName.trim()}
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--theme-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--theme-primary-dark)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-xl bg-(--theme-primary) px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-(--theme-primary-dark) disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? (
                 <>
