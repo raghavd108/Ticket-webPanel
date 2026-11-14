@@ -3,13 +3,10 @@ import { useNavigate } from "react-router-dom";
 import {
   Bell,
   BriefcaseBusiness,
-  Building2,
   CalendarDays,
   ChevronRight,
-  ChevronDown,
   Layers,
   MessageSquare,
-  Plus,
   Settings2,
   ShieldCheck,
   Tag,
@@ -18,9 +15,11 @@ import {
   Loader2,
   LockKeyhole,
   ArrowLeft,
+  Plus,
+  Check,
 } from "lucide-react";
 import axios from "axios";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, api } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import SendNotificationModal from "../components/SendNotificationModal";
 import LeaveManagement from "../components/LeaveManagement";
@@ -30,17 +29,9 @@ const API_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:3002"
 ).replace(/\/$/, "");
 
-const ORGANISATION_TYPES = [
-  "Hospital",
-  "School",
-  "Real Estate",
-  "Inventory & Accounting",
-  "Games",
-];
-
 type Permission = "canManageUsers" | "canPublishOffers" | "canNotifyEmployees";
 
-type ModalType = "organisation" | "designation" | null;
+type ModalType = "designation" | null;
 
 interface ManagementItem {
   title: string;
@@ -96,8 +87,8 @@ const managementItems: ManagementItem[] = [
     path: "/designations",
   },
   {
-    title: "Organisation Categories",
-    description: "Create and manage organisation types.",
+    title: "Organisation Management",
+    description: "Create organisations and manage organisation categories.",
     icon: Layers,
     permission: "canManageUsers",
     path: "/organisations",
@@ -120,12 +111,22 @@ const ManagePage = () => {
   // Leave management view
   const [showLeaveManagement, setShowLeaveManagement] = useState(false);
 
-  const [organisationName, setOrganisationName] = useState("");
   const [designationValue, setDesignationValue] = useState("");
+
+  // Organisation management
+  const [showOrganisationModal, setShowOrganisationModal] = useState(false);
+  const [organisationName, setOrganisationName] = useState("");
   const [organisationType, setOrganisationType] = useState("");
-  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState("");
+  const [organisationTypes, setOrganisationTypes] = useState<
+    { _id: string; name: string }[]
+  >([]);
+  const [loadingOrganisationTypes, setLoadingOrganisationTypes] =
+    useState(false);
+  const [newOrganisationType, setNewOrganisationType] = useState("");
+  const [addingOrganisationType, setAddingOrganisationType] = useState(false);
+  const [creatingOrganisation, setCreatingOrganisation] = useState(false);
+  const [showOrganisationTypeList, setShowOrganisationTypeList] =
+    useState(false);
 
   const isSuperAdmin = currentUser?.isSuperAdmin === true;
 
@@ -180,81 +181,114 @@ const ManagePage = () => {
     }
   };
 
-  const openOrganisationModal = () => {
-    if (!canManageUsers) return;
-
-    setError("");
-    setActiveModal("organisation");
-  };
-
   const closeModal = () => {
-    if (creating) return;
-
     setActiveModal(null);
-    setOrganisationName("");
-    setOrganisationType("");
-    setShowTypeDropdown(false);
-    setError("");
     setDesignationValue("");
   };
 
-  const createOrganisation = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const canAddOrganisationType =
+    currentUser?.role === "admin" ||
+    isSuperAdmin ||
+    currentUser?.permissions?.canManageUsers === true;
 
-    const cleanName = organisationName.trim();
-    const cleanType = organisationType.trim();
-
-    if (!cleanName || !cleanType) {
-      setError("Please enter the organisation name and type.");
-      return;
-    }
-
+  const getOrganisationTypes = async () => {
     try {
-      setCreating(true);
-      setError("");
-
-      const token = sessionStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("Authentication required. Please log in again.");
-      }
-
-      const userId = currentUser?._id || currentUser?.id;
-
-      if (!userId) {
-        throw new Error("Unable to identify the current user.");
-      }
-
-      await axios.post(
-        `${API_URL}/api/org/add-org/${userId}`,
-        {
-          orgType: cleanType,
-          name: cleanName,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        },
+      setLoadingOrganisationTypes(true);
+      const response = await api.get("/org/types");
+      const list = Array.isArray(response.data?.types)
+        ? response.data.types
+        : [];
+      setOrganisationTypes(
+        list
+          .map((item: any) => ({
+            _id: String(item._id || item.id || ""),
+            name: String(item.name || ""),
+          }))
+          .filter(
+            (item: { _id: string; name: string }) => item._id && item.name,
+          ),
       );
+    } catch (error: any) {
+      window.alert(
+        error?.response?.data?.message || "Unable to load organisation types.",
+      );
+    } finally {
+      setLoadingOrganisationTypes(false);
+    }
+  };
 
-      setActiveModal(null);
+  useEffect(() => {
+    if (showOrganisationModal) {
       setOrganisationName("");
       setOrganisationType("");
-      setShowTypeDropdown(false);
+      setNewOrganisationType("");
+      setShowOrganisationTypeList(false);
+      void getOrganisationTypes();
+    }
+  }, [showOrganisationModal]);
 
+  const addOrganisationType = async () => {
+    const name = newOrganisationType.trim().replace(/\s+/g, " ");
+    if (!canAddOrganisationType) {
+      window.alert("You do not have permission to add organisation types.");
+      return;
+    }
+    if (!name) {
+      window.alert("Enter an organisation type.");
+      return;
+    }
+    try {
+      setAddingOrganisationType(true);
+      const response = await api.post("/org/add-type", { name });
+      const createdName = String(response.data?.type?.name || name);
+      await getOrganisationTypes();
+      setOrganisationType(createdName);
+      setNewOrganisationType("");
+      setShowOrganisationTypeList(false);
+      window.alert(`${createdName} has been added successfully.`);
+    } catch (error: any) {
+      window.alert(
+        error?.response?.data?.message || "Unable to add organisation type.",
+      );
+    } finally {
+      setAddingOrganisationType(false);
+    }
+  };
+
+  const createOrganisation = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const name = organisationName.trim();
+    const orgType = organisationType.trim();
+    if (!orgType) return window.alert("Please select an organisation type.");
+    if (!name) return window.alert("Please enter organisation name.");
+
+    try {
+      setCreatingOrganisation(true);
+      const response = await api.get("/auth/me");
+      const userId =
+        response.data?.user?._id ||
+        response.data?.user?.id ||
+        response.data?._id ||
+        response.data?.id ||
+        currentUser?._id ||
+        currentUser?.id;
+      if (!userId) throw new Error("Could not identify the signed-in user.");
+
+      await api.post(`/org/add-org/${userId}`, { name, orgType });
+      setOrganisationName("");
+      setOrganisationType("");
+      setNewOrganisationType("");
+      setShowOrganisationTypeList(false);
+      setShowOrganisationModal(false);
       window.alert("Organisation created successfully.");
-    } catch (err: any) {
-      console.error("CREATE ORGANISATION ERROR:", err?.response?.data || err);
-
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
+    } catch (error: any) {
+      window.alert(
+        error?.response?.data?.message ||
+          error?.message ||
           "Unable to create organisation.",
       );
     } finally {
-      setCreating(false);
+      setCreatingOrganisation(false);
     }
   };
 
@@ -282,11 +316,16 @@ const ManagePage = () => {
       return;
     }
 
+    if (item.title === "Organisation Management") {
+      if (!canManageUsers) return;
+      setShowOrganisationModal(true);
+      return;
+    }
+
     if (item.title === "Designations") {
       if (!canManageUsers) return;
 
       setDesignationValue("");
-      setError("");
       setActiveModal("designation");
       return;
     }
@@ -558,87 +597,79 @@ const ManagePage = () => {
         })}
       </div>
 
-      {/* ORGANISATION QUICK ACTION */}
-      {canManageUsers && (
+      {/* ORGANISATION MANAGEMENT MODAL */}
+      {showOrganisationModal && (
         <div
-          className="mt-9 flex flex-col justify-between gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center"
-          style={{
-            borderColor: theme.border,
-            background: theme.primarySoft,
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <div
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: theme.white, color: theme.primary }}
-            >
-              <Building2 className="h-6 w-6" />
-            </div>
-
-            <div>
-              <h3 className="font-bold" style={{ color: theme.text }}>
-                Add New Organisation
-              </h3>
-
-              <p className="mt-1 text-sm" style={{ color: theme.muted }}>
-                Register a new client organisation in your system.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={openOrganisationModal}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition"
-            style={{ background: theme.primary }}
-          >
-            <Plus size={17} />
-            Create Organisation
-          </button>
-        </div>
-      )}
-
-      {/* ORGANISATION MODAL */}
-      {activeModal === "organisation" && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeModal();
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget &&
+              !creatingOrganisation &&
+              !addingOrganisationType
+            ) {
+              setShowOrganisationModal(false);
+            }
           }}
         >
           <div
-            className="w-full max-w-md overflow-visible rounded-2xl border shadow-2xl"
-            style={{ borderColor: theme.border, background: theme.white }}
+            className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[22px] border p-5 shadow-2xl sm:p-6"
+            style={{
+              borderColor: theme.border,
+              background: theme.background,
+              color: theme.text,
+            }}
           >
-            <div
-              className="flex items-center justify-between border-b px-6 py-5"
-              style={{ borderColor: theme.divider }}
-            >
-              <div>
-                <h2 className="text-lg font-bold" style={{ color: theme.text }}>
+            {/* Modal heading */}
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <div
+                  className="mb-3 inline-flex items-center rounded-lg px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[1px]"
+                  style={{
+                    background: theme.primarySoft,
+                    color: theme.primary,
+                  }}
+                >
+                  New Organisation
+                </div>
+                <h2
+                  className="text-[23px] font-extrabold leading-tight"
+                  style={{ color: theme.ink || theme.text }}
+                >
                   Add Organisation
                 </h2>
-
-                <p className="mt-1 text-xs" style={{ color: theme.muted }}>
-                  Enter the organisation details below.
+                <p
+                  className="mt-1.5 text-[13px] leading-5"
+                  style={{ color: theme.muted }}
+                >
+                  Create a new organisation and assign it to a category.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={closeModal}
-                disabled={creating}
-                className="rounded-lg p-2 transition disabled:opacity-50"
-                style={{ color: theme.muted }}
+                onClick={() => {
+                  if (!creatingOrganisation && !addingOrganisationType) {
+                    setShowOrganisationModal(false);
+                  }
+                }}
+                disabled={creatingOrganisation || addingOrganisationType}
+                className="flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-xl border transition hover:opacity-75 disabled:opacity-50"
+                style={{
+                  background: theme.primarySoft,
+                  borderColor: theme.border,
+                  color: theme.ink || theme.text,
+                }}
+                aria-label="Close organisation management"
               >
-                <X size={20} />
+                <X size={21} />
               </button>
             </div>
 
-            <form onSubmit={createOrganisation} className="space-y-5 p-6">
-              {/* ORGANISATION TYPE */}
-              <div className="relative">
+            <form onSubmit={createOrganisation} className="space-y-5">
+              {/* Organisation category */}
+              <div>
                 <label
-                  className="mb-2 block text-sm font-semibold"
+                  className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.5px]"
                   style={{ color: theme.text }}
                 >
                   Organisation Type
@@ -646,124 +677,216 @@ const ManagePage = () => {
 
                 <button
                   type="button"
-                  onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                  disabled={creating}
-                  className="flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition"
+                  onClick={() => {
+                    const next = !showOrganisationTypeList;
+                    setShowOrganisationTypeList(next);
+                    if (next) void getOrganisationTypes();
+                  }}
+                  disabled={creatingOrganisation}
+                  className="flex min-h-13 w-full items-center justify-between rounded-xl border px-4 text-left text-sm transition disabled:opacity-60"
                   style={{
-                    borderColor: theme.border,
-                    background: theme.input,
-                    color: theme.text,
+                    borderColor: showOrganisationTypeList
+                      ? theme.primary
+                      : theme.border,
+                    background: theme.background,
+                    color: organisationType
+                      ? theme.ink || theme.text
+                      : theme.muted,
                   }}
                 >
-                  <span className={organisationType ? "" : ""}>
+                  <span
+                    className={
+                      organisationType ? "font-semibold" : "font-normal"
+                    }
+                  >
                     {organisationType || "Select organisation type"}
                   </span>
-
-                  <ChevronDown size={17} className="" />
+                  <ChevronRight
+                    size={19}
+                    className={
+                      showOrganisationTypeList
+                        ? "rotate-90 transition-transform"
+                        : "transition-transform"
+                    }
+                    style={{ color: theme.muted }}
+                  />
                 </button>
 
-                {showTypeDropdown && (
+                {showOrganisationTypeList && (
                   <div
-                    className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-xl border shadow-xl"
+                    className="mt-2 max-h-65 overflow-y-auto overflow-hidden rounded-xl border"
                     style={{
                       borderColor: theme.border,
-                      background: theme.white,
+                      background: theme.background,
                     }}
                   >
-                    {ORGANISATION_TYPES.map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => {
-                          setOrganisationType(type);
-                          setShowTypeDropdown(false);
-                        }}
-                        className="flex w-full items-center px-4 py-3 text-left text-sm transition"
+                    {loadingOrganisationTypes ? (
+                      <div
+                        className="flex items-center justify-center gap-2 p-4 text-sm"
+                        style={{ color: theme.muted }}
+                      >
+                        <Loader2 size={17} className="animate-spin" />
+                        Loading organisation types...
+                      </div>
+                    ) : organisationTypes.length === 0 ? (
+                      <p
+                        className="p-4 text-center text-sm"
+                        style={{ color: theme.muted }}
+                      >
+                        No organisation types available.
+                      </p>
+                    ) : (
+                      organisationTypes.map((type) => {
+                        const selected = organisationType === type.name;
+                        return (
+                          <button
+                            type="button"
+                            key={type._id}
+                            onClick={() => {
+                              setOrganisationType(type.name);
+                              setShowOrganisationTypeList(false);
+                            }}
+                            className="flex w-full items-center justify-between border-b px-4 py-3.5 text-left text-sm transition last:border-b-0 hover:opacity-80"
+                            style={{
+                              borderColor: theme.divider,
+                              background: selected
+                                ? theme.primarySoft
+                                : theme.background,
+                              color: selected
+                                ? theme.primary
+                                : theme.ink || theme.text,
+                              fontWeight: selected ? 700 : 500,
+                            }}
+                          >
+                            {type.name}
+                            {selected && (
+                              <Check
+                                size={18}
+                                style={{ color: theme.primary }}
+                              />
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {canAddOrganisationType && (
+                      <div
+                        className="border-t p-3"
                         style={{
-                          background:
-                            organisationType === type
-                              ? theme.primarySoft
-                              : "transparent",
-                          color:
-                            organisationType === type
-                              ? theme.primaryDark
-                              : theme.text,
-                          fontWeight: organisationType === type ? 600 : 400,
+                          borderColor: theme.divider,
+                          background: theme.background,
                         }}
                       >
-                        {type}
-                      </button>
-                    ))}
+                        <p
+                          className="mb-2 text-xs font-bold"
+                          style={{ color: theme.ink || theme.text }}
+                        >
+                          Add a new organisation type
+                        </p>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <input
+                            value={newOrganisationType}
+                            onChange={(event) =>
+                              setNewOrganisationType(event.target.value)
+                            }
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                void addOrganisationType();
+                              }
+                            }}
+                            placeholder="Enter new type"
+                            autoCapitalize="words"
+                            disabled={
+                              addingOrganisationType || creatingOrganisation
+                            }
+                            className="h-11.5 min-w-0 flex-1 rounded-[10px] border px-3 text-[13px] outline-none transition focus:ring-2"
+                            style={{
+                              borderColor: theme.border,
+                              background: theme.background,
+                              color: theme.ink || theme.text,
+                              ["--tw-ring-color" as any]: theme.primarySoft,
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => void addOrganisationType()}
+                            disabled={
+                              addingOrganisationType ||
+                              creatingOrganisation ||
+                              !newOrganisationType.trim()
+                            }
+                            className="inline-flex h-11.5 min-w-19 items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50"
+                            style={{ background: theme.primary, color: "#fff" }}
+                          >
+                            {addingOrganisationType ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <Plus size={16} />
+                            )}
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* ORGANISATION NAME */}
+              {/* Organisation name */}
               <div>
                 <label
-                  className="mb-2 block text-sm font-semibold"
+                  className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.5px]"
                   style={{ color: theme.text }}
                 >
                   Organisation Name
                 </label>
-
                 <input
                   value={organisationName}
-                  onChange={(e) => setOrganisationName(e.target.value)}
+                  onChange={(event) => setOrganisationName(event.target.value)}
                   placeholder="Enter organisation name"
-                  disabled={creating}
-                  className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition disabled:opacity-50"
+                  autoCapitalize="words"
+                  disabled={creatingOrganisation}
+                  className="h-13 w-full rounded-xl border px-4 text-sm outline-none transition focus:ring-2 disabled:opacity-60"
                   style={{
                     borderColor: theme.border,
-                    background: theme.input,
-                    color: theme.text,
+                    background: theme.background,
+                    color: theme.ink || theme.text,
                   }}
                 />
               </div>
 
-              {error && (
-                <p
-                  className="rounded-lg px-3 py-2 text-sm"
-                  style={{ background: theme.dangerSoft, color: theme.danger }}
-                >
-                  {error}
-                </p>
-              )}
+              <button
+                type="submit"
+                disabled={
+                  creatingOrganisation ||
+                  !organisationName.trim() ||
+                  !organisationType
+                }
+                className="flex h-13 w-full items-center justify-center gap-2 rounded-[14px] text-sm font-extrabold transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                style={{ background: theme.primary, color: "#fff" }}
+              >
+                {creatingOrganisation && (
+                  <Loader2 size={17} className="animate-spin" />
+                )}
+                {creatingOrganisation ? "Creating..." : "Create Organisation"}
+              </button>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  disabled={creating}
-                  className="flex-1 rounded-xl border px-4 py-3 text-sm font-semibold transition disabled:opacity-50"
-                  style={{
-                    borderColor: theme.border,
-                    color: theme.text,
-                    background: theme.white,
-                  }}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{ background: theme.primary }}
-                >
-                  {creating ? (
-                    <>
-                      <Loader2 size={17} className="animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={17} />
-                      Create Organisation
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!creatingOrganisation && !addingOrganisationType) {
+                    setShowOrganisationModal(false);
+                    setShowOrganisationTypeList(false);
+                  }
+                }}
+                disabled={creatingOrganisation || addingOrganisationType}
+                className="flex h-11.5 w-full items-center justify-center text-[13px] font-bold transition hover:opacity-70 disabled:opacity-50"
+                style={{ color: theme.muted }}
+              >
+                Cancel
+              </button>
             </form>
           </div>
         </div>

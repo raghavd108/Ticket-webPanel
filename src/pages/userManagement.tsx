@@ -14,6 +14,7 @@ interface Organisation {
 
 interface Employee {
   _id: string;
+  name?: string;
   userName: string;
   email: string;
   mobileNumber?: string;
@@ -24,6 +25,7 @@ interface Employee {
 interface User {
   id: string;
   _id: string;
+  name?: string;
   userName: string;
   email: string;
   mobileNumber?: string;
@@ -39,15 +41,8 @@ interface User {
 const PAGE_SIZE = 10;
 const DEFAULT_ORGANISATION = "SP Infocom";
 
-const ORGANISATION_TYPES = [
-  "Hospital",
-  "School",
-  "Real Estate",
-  "Inventory & Accounting",
-  "Games",
-];
-
 const initialForm = {
+  name: "",
   userName: "",
   email: "",
   mobileNumber: "",
@@ -152,9 +147,19 @@ export default function UserManagement() {
   // CREATE ORGANISATION
   const [organisationName, setOrganisationName] = useState("");
   const [organisationType, setOrganisationType] = useState("");
+  const [organisationTypes, setOrganisationTypes] = useState<
+    { _id: string; name: string }[]
+  >([]);
+  const [loadingOrganisationTypes, setLoadingOrganisationTypes] =
+    useState(false);
+  const [newOrganisationType, setNewOrganisationType] = useState("");
+  const [addingOrganisationType, setAddingOrganisationType] = useState(false);
+  const [showOrganisationTypeList, setShowOrganisationTypeList] =
+    useState(false);
 
   // EDIT USER
   const [editForm, setEditForm] = useState({
+    name: "",
     userName: "",
     email: "",
     mobileNumber: "",
@@ -299,13 +304,18 @@ export default function UserManagement() {
   const createUser = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    const name = form.name.trim();
     const userName = form.userName.trim().toLowerCase();
     const email = form.email.trim().toLowerCase();
     const mobileNumber = form.mobileNumber.trim();
     const designation = form.designation.trim();
 
-    if (!userName || !email || !form.password) {
-      return notify("Please fill in all required fields.");
+    if (!name || !userName || !email || !form.password) {
+      return notify("Please enter full name, username, email and password.");
+    }
+
+    if (name.length > 191) {
+      return notify("Full name cannot exceed 191 characters.");
     }
 
     if (createRole === "client" && !form.organisation) {
@@ -331,6 +341,7 @@ export default function UserManagement() {
         createRole === "employee"
           ? spinfocomOrganisation?._id
           : form.organisation,
+      name,
       userName,
       email,
       password: form.password,
@@ -369,15 +380,92 @@ export default function UserManagement() {
   };
 
   // =====================================================
+  // ORGANISATION TYPES
+  // =====================================================
+
+  const canAddOrganisationType =
+    currentUser?.role === "admin" ||
+    isSuperAdmin ||
+    currentUser?.permissions?.canManageUsers === true;
+
+  const getOrganisationTypes = useCallback(async () => {
+    try {
+      setLoadingOrganisationTypes(true);
+      const response = await api.get("/org/types");
+      const list = Array.isArray(response.data?.types)
+        ? response.data.types
+        : [];
+
+      setOrganisationTypes(
+        list
+          .map((item: any) => ({
+            _id: String(item._id || item.id || ""),
+            name: String(item.name || ""),
+          }))
+          .filter(
+            (item: { _id: string; name: string }) => item._id && item.name,
+          ),
+      );
+    } catch (error) {
+      console.error("GET ORGANISATION TYPES ERROR:", error);
+      notify(getError(error));
+    } finally {
+      setLoadingOrganisationTypes(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showOrganisationModal) {
+      setOrganisationName("");
+      setOrganisationType("");
+      setNewOrganisationType("");
+      setShowOrganisationTypeList(false);
+      void getOrganisationTypes();
+    }
+  }, [showOrganisationModal, getOrganisationTypes]);
+
+  const addOrganisationType = async () => {
+    const cleanName = newOrganisationType.trim().replace(/\s+/g, " ");
+
+    if (!canAddOrganisationType) {
+      notify("You do not have permission to add organisation types.");
+      return;
+    }
+
+    if (!cleanName) {
+      notify("Enter an organisation type.");
+      return;
+    }
+
+    try {
+      setAddingOrganisationType(true);
+      const response = await api.post("/org/add-type", { name: cleanName });
+      const createdName = String(response.data?.type?.name || cleanName);
+
+      await getOrganisationTypes();
+      setOrganisationType(createdName);
+      setNewOrganisationType("");
+      setShowOrganisationTypeList(false);
+      notify(`${createdName} has been added successfully.`);
+    } catch (error) {
+      notify(getError(error));
+    } finally {
+      setAddingOrganisationType(false);
+    }
+  };
+
+  // =====================================================
   // CREATE ORGANISATION
   // =====================================================
 
   const createOrganisation = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!organisationName.trim() || !organisationType) {
-      return notify("Please enter organisation name and type.");
-    }
+    const cleanName = organisationName.trim();
+    const cleanType = organisationType.trim();
+
+    if (!cleanType) return notify("Please select an organisation type.");
+    if (!cleanName) return notify("Please enter organisation name.");
 
     try {
       setSaving(true);
@@ -391,8 +479,8 @@ export default function UserManagement() {
       }
 
       const response = await api.post(`/org/add-org/${userId}`, {
-        name: organisationName.trim(),
-        orgType: organisationType,
+        name: cleanName,
+        orgType: cleanType,
       });
 
       const created = response.data?.org || response.data?.organisation;
@@ -408,8 +496,9 @@ export default function UserManagement() {
 
       setOrganisationName("");
       setOrganisationType("");
+      setNewOrganisationType("");
+      setShowOrganisationTypeList(false);
       setShowOrganisationModal(false);
-
       notify("Organisation created successfully.");
     } catch (error) {
       notify(getError(error));
@@ -435,6 +524,7 @@ export default function UserManagement() {
     if (!selectedUser) return;
 
     setEditForm({
+      name: selectedUser.name || "",
       userName: selectedUser.userName || "",
       email: selectedUser.email || "",
       mobileNumber: selectedUser.mobileNumber || "",
@@ -457,13 +547,18 @@ export default function UserManagement() {
     const isEmployee = selectedUser.role === "employee";
     const isClient = selectedUser.role === "client";
 
+    const name = editForm.name.trim();
     const userName = editForm.userName.trim();
     const email = editForm.email.trim().toLowerCase();
     const mobileNumber = editForm.mobileNumber.trim();
     const designation = editForm.designation.trim();
 
-    if (!userName || !email) {
-      return notify("Username and email are required.");
+    if (!name || !userName || !email) {
+      return notify("Full name, username and email are required.");
+    }
+
+    if (name.length > 191) {
+      return notify("Full name cannot exceed 191 characters.");
     }
 
     if (mobileNumber && !/^\d{10}$/.test(mobileNumber)) {
@@ -479,6 +574,7 @@ export default function UserManagement() {
     }
 
     const payload: Record<string, any> = {
+      name,
       userName,
       email,
       mobileNumber: mobileNumber || null,
@@ -506,6 +602,7 @@ export default function UserManagement() {
       const nextUser = {
         ...selectedUser,
         ...updated,
+        name: updated.name ?? name,
         userName: updated.userName ?? userName,
         email: updated.email ?? email,
         mobileNumber: updated.mobileNumber ?? mobileNumber,
@@ -546,9 +643,10 @@ export default function UserManagement() {
     const userId = getId(selectedUser);
     const restore = selectedUser.isRevoked === true;
 
+    const displayName = selectedUser.name || selectedUser.userName;
     const message = restore
-      ? `Restore login access for ${selectedUser.userName}?`
-      : `Revoke login access for ${selectedUser.userName}?`;
+      ? `Restore login access for ${displayName}?`
+      : `Revoke login access for ${displayName}?`;
 
     if (!window.confirm(message)) return;
 
@@ -661,6 +759,7 @@ export default function UserManagement() {
       const searchValue = search.toLowerCase();
 
       const matchesSearch =
+        item.name?.toLowerCase().includes(searchValue) ||
         item.userName?.toLowerCase().includes(searchValue) ||
         item.email?.toLowerCase().includes(searchValue) ||
         item.organisation?.name?.toLowerCase().includes(searchValue) ||
@@ -1062,15 +1161,17 @@ export default function UserManagement() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 font-bold text-gray-700">
-                          {item.userName?.charAt(0)?.toUpperCase() || "U"}
+                          {(item.name || item.userName)
+                            ?.charAt(0)
+                            ?.toUpperCase() || "U"}
                         </div>
 
                         <div>
                           <p className="text-sm font-semibold text-gray-900">
-                            {item.userName}
+                            {item.name || item.userName}
                           </p>
                           <p className="mt-1 text-xs text-gray-500">
-                            {item.email}
+                            {item.userName} · {item.email}
                           </p>
                         </div>
                       </div>
@@ -1158,6 +1259,19 @@ export default function UserManagement() {
         >
           <form onSubmit={createUser} className="space-y-4">
             <div>
+              <label className={labelClass}>Full name</label>
+              <input
+                className={inputClass}
+                value={form.name}
+                onChange={(e) => updateForm("name", e.target.value)}
+                placeholder="Enter full name"
+                maxLength={191}
+                autoComplete="name"
+                required
+              />
+            </div>
+
+            <div>
               <label className={labelClass}>Username</label>
               <input
                 className={inputClass}
@@ -1235,7 +1349,7 @@ export default function UserManagement() {
 
                         <div>
                           <p className="text-sm font-semibold text-gray-800">
-                            {employee.userName}
+                            {employee.name || employee.userName}
                           </p>
                           <p className="text-xs text-gray-500">
                             {employee.designation || employee.email}
@@ -1326,10 +1440,114 @@ export default function UserManagement() {
       {showOrganisationModal && (
         <Modal
           title="Create Organisation"
-          onClose={() => !saving && setShowOrganisationModal(false)}
+          onClose={() =>
+            !saving &&
+            !addingOrganisationType &&
+            setShowOrganisationModal(false)
+          }
           width="max-w-lg"
         >
-          <form onSubmit={createOrganisation} className="space-y-4">
+          <form onSubmit={createOrganisation} className="space-y-5">
+            <div>
+              <label className={labelClass}>Organisation type</label>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !showOrganisationTypeList;
+                  setShowOrganisationTypeList(next);
+                  if (next) void getOrganisationTypes();
+                }}
+                disabled={saving || addingOrganisationType}
+                className={`${inputClass} flex items-center justify-between text-left`}
+              >
+                <span
+                  className={
+                    organisationType ? "text-gray-900" : "text-gray-400"
+                  }
+                >
+                  {organisationType || "Select organisation type"}
+                </span>
+                <span className="text-gray-400">
+                  {showOrganisationTypeList ? "⌃" : "⌄"}
+                </span>
+              </button>
+
+              {showOrganisationTypeList && (
+                <div className="mt-2 overflow-hidden rounded-xl border border-gray-200 bg-white">
+                  <div className="max-h-52 overflow-y-auto">
+                    {loadingOrganisationTypes ? (
+                      <p className="px-4 py-4 text-center text-sm text-gray-500">
+                        Loading organisation types...
+                      </p>
+                    ) : organisationTypes.length ? (
+                      organisationTypes.map((item) => (
+                        <button
+                          key={item._id}
+                          type="button"
+                          onClick={() => {
+                            setOrganisationType(item.name);
+                            setShowOrganisationTypeList(false);
+                          }}
+                          className={`flex w-full items-center justify-between border-b border-gray-100 px-4 py-3 text-left text-sm last:border-b-0 hover:bg-gray-50 ${
+                            organisationType === item.name
+                              ? "font-semibold text-gray-900"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          {item.name}
+                          {organisationType === item.name && (
+                            <span className="text-green-600">✓</span>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <p className="px-4 py-4 text-center text-sm text-gray-500">
+                        No organisation types available.
+                      </p>
+                    )}
+                  </div>
+
+                  {canAddOrganisationType && (
+                    <div className="border-t border-gray-200 bg-gray-50 p-3">
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Add a new organisation type
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          className={inputClass}
+                          value={newOrganisationType}
+                          onChange={(event) =>
+                            setNewOrganisationType(event.target.value)
+                          }
+                          placeholder="Enter new type"
+                          autoComplete="off"
+                          disabled={addingOrganisationType || saving}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              void addOrganisationType();
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className={primaryButton}
+                          onClick={() => void addOrganisationType()}
+                          disabled={
+                            addingOrganisationType ||
+                            saving ||
+                            !newOrganisationType.trim()
+                          }
+                        >
+                          {addingOrganisationType ? "Adding..." : "Add"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div>
               <label className={labelClass}>Organisation name</label>
               <input
@@ -1341,30 +1559,12 @@ export default function UserManagement() {
               />
             </div>
 
-            <div>
-              <label className={labelClass}>Organisation type</label>
-
-              <select
-                className={inputClass}
-                value={organisationType}
-                onChange={(e) => setOrganisationType(e.target.value)}
-                required
-              >
-                <option value="">Select organisation type</option>
-
-                {ORGANISATION_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex gap-3 pt-3">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 className={`${secondaryButton} flex-1`}
                 onClick={() => setShowOrganisationModal(false)}
+                disabled={saving || addingOrganisationType}
               >
                 Cancel
               </button>
@@ -1372,7 +1572,7 @@ export default function UserManagement() {
               <button
                 type="submit"
                 className={`${primaryButton} flex-1`}
-                disabled={saving}
+                disabled={saving || addingOrganisationType || !organisationType}
               >
                 {saving ? "Creating..." : "Create organisation"}
               </button>
@@ -1394,19 +1594,25 @@ export default function UserManagement() {
           <div className="space-y-5">
             <div className="flex items-center gap-4 rounded-xl bg-gray-50 p-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-200 text-xl font-bold text-gray-700">
-                {selectedUser.userName?.charAt(0)?.toUpperCase()}
+                {(selectedUser.name || selectedUser.userName)
+                  ?.charAt(0)
+                  ?.toUpperCase()}
               </div>
 
               <div>
                 <h3 className="text-lg font-bold text-gray-900">
-                  {selectedUser.userName}
+                  {selectedUser.name || selectedUser.userName}
                 </h3>
-                <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                <p className="text-sm text-gray-500">
+                  @{selectedUser.userName} · {selectedUser.email}
+                </p>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               {[
+                ["Full name", selectedUser.name || "—"],
+                ["Username", selectedUser.userName || "—"],
                 ["Role", selectedUser.role],
                 ["Mobile", selectedUser.mobileNumber || "—"],
                 ["Organisation", selectedUser.organisation?.name || "—"],
@@ -1447,7 +1653,7 @@ export default function UserManagement() {
                       className="rounded-xl border border-gray-100 p-3"
                     >
                       <p className="text-sm font-semibold text-gray-800">
-                        {employee.userName}
+                        {employee.name || employee.userName}
                       </p>
                       <p className="text-xs text-gray-500">{employee.email}</p>
                     </div>
@@ -1530,6 +1736,19 @@ export default function UserManagement() {
         >
           <form onSubmit={updateUser} className="space-y-4">
             <div>
+              <label className={labelClass}>Full name</label>
+              <input
+                className={inputClass}
+                value={editForm.name}
+                onChange={(e) => updateEditForm("name", e.target.value)}
+                placeholder="Enter full name"
+                maxLength={191}
+                autoComplete="name"
+                required
+              />
+            </div>
+
+            <div>
               <label className={labelClass}>Username</label>
               <input
                 className={inputClass}
@@ -1602,7 +1821,7 @@ export default function UserManagement() {
                         onChange={() => toggleEditEmployee(employee._id)}
                       />
                       <span className="text-sm text-gray-700">
-                        {employee.userName}
+                        {employee.name || employee.userName}
                       </span>
                     </label>
                   ))}
@@ -1659,7 +1878,7 @@ export default function UserManagement() {
             <div>
               <label className={labelClass}>Employee</label>
               <div className="um-muted-panel rounded-xl border px-4 py-3 text-sm font-semibold text-gray-800">
-                {selectedUser.userName}
+                {selectedUser.name || selectedUser.userName}
               </div>
             </div>
 
@@ -1760,13 +1979,13 @@ export default function UserManagement() {
 
       {showAttendanceHistory && selectedUser && (
         <Modal
-          title={`${selectedUser.userName} - Attendance History`}
+          title={`${selectedUser.name || selectedUser.userName} - Attendance History`}
           onClose={() => setShowAttendanceHistory(false)}
           width="max-w-6xl"
         >
           <AttendanceHistory
             employeeId={getId(selectedUser)}
-            employeeName={selectedUser.userName}
+            employeeName={selectedUser.name || selectedUser.userName}
           />
         </Modal>
       )}
