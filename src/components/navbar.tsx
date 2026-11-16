@@ -13,6 +13,7 @@ import {
 
 import type { AuthUser } from "../types/auth";
 import { useTheme } from "../context/ThemeContext";
+import AttendanceToggle from "../components/AttendanceToggle";
 
 interface HeaderProps {
   user: AuthUser;
@@ -23,7 +24,6 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({
   user,
-
   onLogout,
   notificationCount = 0,
 }) => {
@@ -33,6 +33,8 @@ const Header: React.FC<HeaderProps> = ({
   const [profileOpen, setProfileOpen] = useState(false);
 
   const initials = user.userName?.trim().charAt(0).toUpperCase() || "U";
+
+  const isEmployee = user.role?.toLowerCase() === "employee";
 
   const navigateTo = (path: string) => {
     navigate(path);
@@ -50,9 +52,15 @@ const Header: React.FC<HeaderProps> = ({
       }}
       className="sticky top-0 z-40 h-16 shrink-0 border-b"
     >
-      <div className="flex h-full items-center justify-between px-4 md:px-6">
+      <div className="flex h-full items-center justify-between gap-2 px-3 md:px-6">
         {/* LEFT SECTION */}
-        <div className="flex min-w-0 items-center gap-3"></div>
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {isEmployee && (
+            <div className="w-67.5 shrink-0">
+              <AttendanceToggle />
+            </div>
+          )}
+        </div>
 
         {/* RIGHT SECTION */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
