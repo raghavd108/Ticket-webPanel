@@ -1111,6 +1111,7 @@ export default function UserManagement() {
                 placeholder="Search name, email or organisation..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
+                autoComplete="off"
               />
             </div>
           </div>
@@ -1257,7 +1258,7 @@ export default function UserManagement() {
           title={`Create ${createRole === "client" ? "Client" : "Employee"}`}
           onClose={() => !saving && setShowUserModal(false)}
         >
-          <form onSubmit={createUser} className="space-y-4">
+          <form onSubmit={createUser} className="space-y-4" autoComplete="off">
             <div>
               <label className={labelClass}>Full name</label>
               <input
@@ -1266,7 +1267,7 @@ export default function UserManagement() {
                 onChange={(e) => updateForm("name", e.target.value)}
                 placeholder="Enter full name"
                 maxLength={191}
-                autoComplete="name"
+                autoComplete="off"
                 required
               />
             </div>
@@ -1279,6 +1280,7 @@ export default function UserManagement() {
                 onChange={(e) => updateForm("userName", e.target.value)}
                 placeholder="Enter username"
                 required
+                autoComplete="off"
               />
             </div>
 
@@ -1291,6 +1293,7 @@ export default function UserManagement() {
                 onChange={(e) => updateForm("email", e.target.value)}
                 placeholder="Enter email address"
                 required
+                autoComplete="off"
               />
             </div>
 
@@ -1303,6 +1306,7 @@ export default function UserManagement() {
                 onChange={(e) => updateForm("password", e.target.value)}
                 placeholder="Create password"
                 required
+                autoComplete="new-password"
               />
             </div>
 
@@ -1345,6 +1349,7 @@ export default function UserManagement() {
                           type="checkbox"
                           checked={form.assignedEmployee.includes(employee._id)}
                           onChange={() => toggleAssignedEmployee(employee._id)}
+                          autoComplete="off"
                         />
 
                         <div>
@@ -1384,6 +1389,7 @@ export default function UserManagement() {
                     placeholder="10-digit mobile number"
                     maxLength={10}
                     required
+                    autoComplete="off"
                   />
                 </div>
 
@@ -1447,7 +1453,11 @@ export default function UserManagement() {
           }
           width="max-w-lg"
         >
-          <form onSubmit={createOrganisation} className="space-y-5">
+          <form
+            onSubmit={createOrganisation}
+            className="space-y-5"
+            autoComplete="off"
+          >
             <div>
               <label className={labelClass}>Organisation type</label>
               <button
@@ -1556,6 +1566,7 @@ export default function UserManagement() {
                 onChange={(e) => setOrganisationName(e.target.value)}
                 placeholder="Enter organisation name"
                 required
+                autoComplete="off"
               />
             </div>
 
@@ -1734,7 +1745,7 @@ export default function UserManagement() {
           title={`Edit ${selectedUser.role}`}
           onClose={() => !saving && setShowEditModal(false)}
         >
-          <form onSubmit={updateUser} className="space-y-4">
+          <form onSubmit={updateUser} className="space-y-4" autoComplete="off">
             <div>
               <label className={labelClass}>Full name</label>
               <input
@@ -1743,7 +1754,7 @@ export default function UserManagement() {
                 onChange={(e) => updateEditForm("name", e.target.value)}
                 placeholder="Enter full name"
                 maxLength={191}
-                autoComplete="name"
+                autoComplete="off"
                 required
               />
             </div>
@@ -1755,6 +1766,7 @@ export default function UserManagement() {
                 value={editForm.userName}
                 onChange={(e) => updateEditForm("userName", e.target.value)}
                 required
+                autoComplete="off"
               />
             </div>
 
@@ -1766,6 +1778,7 @@ export default function UserManagement() {
                 value={editForm.email}
                 onChange={(e) => updateEditForm("email", e.target.value)}
                 required
+                autoComplete="off"
               />
             </div>
 
@@ -1781,6 +1794,7 @@ export default function UserManagement() {
                   )
                 }
                 maxLength={10}
+                autoComplete="off"
               />
             </div>
 
@@ -1819,6 +1833,7 @@ export default function UserManagement() {
                           employee._id,
                         )}
                         onChange={() => toggleEditEmployee(employee._id)}
+                        autoComplete="off"
                       />
                       <span className="text-sm text-gray-700">
                         {employee.name || employee.userName}
@@ -1874,7 +1889,11 @@ export default function UserManagement() {
           title="Upload Employee Documents"
           onClose={() => !uploading && setShowUploadModal(false)}
         >
-          <form onSubmit={uploadDocuments} className="space-y-4">
+          <form
+            onSubmit={uploadDocuments}
+            className="space-y-4"
+            autoComplete="off"
+          >
             <div>
               <label className={labelClass}>Employee</label>
               <div className="um-muted-panel rounded-xl border px-4 py-3 text-sm font-semibold text-gray-800">
@@ -1890,6 +1909,7 @@ export default function UserManagement() {
                 onChange={(e) => setDocumentTitle(e.target.value)}
                 placeholder="Enter document title"
                 required
+                autoComplete="off"
               />
             </div>
 
@@ -1916,6 +1936,7 @@ export default function UserManagement() {
                   );
                   e.target.value = "";
                 }}
+                autoComplete="off"
               />
             </div>
 
