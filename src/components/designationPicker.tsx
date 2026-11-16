@@ -154,7 +154,7 @@ const DesignationPicker: React.FC<Props> = ({
   disabled = false,
   isSuperAdmin = false,
   canManageUsers = false,
-  managementLevel = 0,
+
   allowCreate = false,
   className = "",
 }) => {
@@ -204,16 +204,56 @@ const DesignationPicker: React.FC<Props> = ({
       setError("");
 
       const response = await api.get("/designations");
+      const body = response.data;
 
-      const records: Designation[] = Array.isArray(response.data?.designations)
-        ? response.data.designations
-        : [];
+      // Support the response shapes commonly returned by the API:
+      // { designations: [] }, { data: { designations: [] } },
+      // { data: [] }, or a direct array.
+      const candidates = [
+        body?.designations,
+        body?.data?.designations,
+        body?.data?.data?.designations,
+        body?.items,
+        body?.data?.items,
+        body?.data,
+        body,
+      ];
 
-      setDesignations(records);
+      const records = candidates.find(Array.isArray) as
+        | Designation[]
+        | undefined;
+
+      if (!records) {
+        console.error("UNEXPECTED DESIGNATIONS RESPONSE:", body);
+        throw new Error(
+          "The server response did not contain a designations list.",
+        );
+      }
+
+      setDesignations(
+        records
+          .map((item: any) => ({
+            ...item,
+            id: Number(item.id ?? item._id),
+            name: String(item.name ?? item.designation ?? "").trim(),
+            canViewAllTickets: item.canViewAllTickets === true,
+            canAssignTickets: item.canAssignTickets === true,
+            canManageUsers: item.canManageUsers === true,
+            canPublishOffers: item.canPublishOffers === true,
+            canNotifyEmployees: item.canNotifyEmployees === true,
+            managementLevel: Number(item.managementLevel ?? 0),
+          }))
+          .filter((item) => item.name),
+      );
     } catch (err: any) {
       console.error("GET DESIGNATIONS ERROR:", err?.response?.data || err);
 
-      setError(err?.response?.data?.message || "Unable to load designations.");
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Unable to load designations.",
+      );
     } finally {
       setLoading(false);
     }
@@ -227,19 +267,11 @@ const DesignationPicker: React.FC<Props> = ({
   // FILTER DESIGNATIONS
   // =====================================================
 
-  const availableDesignations = useMemo(() => {
-    if (isSuperAdmin) {
-      return designations;
-    }
-
-    const actorLevel = Number(managementLevel || 0);
-
-    return designations.filter((item) => {
-      const designationLevel = Number(item.managementLevel || 0);
-
-      return designationLevel < actorLevel;
-    });
-  }, [designations, isSuperAdmin, managementLevel]);
+  // The backend already applies the management-level visibility rules
+  // in GET /api/designations. Do not filter the returned list again here:
+  // a missing/stale managementLevel prop defaults to 0 and would hide
+  // every designation even when the API has correctly returned them.
+  const availableDesignations = useMemo(() => designations, [designations]);
 
   const selected = availableDesignations.find((item) => item.name === value);
 

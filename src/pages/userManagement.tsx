@@ -1844,7 +1844,10 @@ export default function UserManagement() {
               </div>
             )}
 
-            {isSuperAdmin && (
+            {(isSuperAdmin ||
+              (canManageUsers &&
+                (selectedUser.role === "client" ||
+                  selectedUser.role === "employee"))) && (
               <div>
                 <label className={labelClass}>New password (optional)</label>
                 <input
@@ -1854,7 +1857,12 @@ export default function UserManagement() {
                   value={editForm.password}
                   onChange={(e) => updateEditForm("password", e.target.value)}
                   placeholder="Leave blank to keep current password"
+                  minLength={8}
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  You can change the password only for accounts below your
+                  management level.
+                </p>
               </div>
             )}
 

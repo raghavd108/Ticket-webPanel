@@ -17,17 +17,14 @@ import {
   ArrowLeft,
   Plus,
   Check,
+  Star,
+  RefreshCw,
 } from "lucide-react";
-import axios from "axios";
 import { useAuth, api } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import SendNotificationModal from "../components/SendNotificationModal";
 import LeaveManagement from "../components/LeaveManagement";
 import DesignationPicker from "../components/designationPicker";
-
-const API_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:3002"
-).replace(/\/$/, "");
 
 type Permission = "canManageUsers" | "canPublishOffers" | "canNotifyEmployees";
 
@@ -39,6 +36,30 @@ interface ManagementItem {
   icon: React.ElementType;
   permission: Permission;
   path: string;
+}
+
+interface ClientFeedbackItem {
+  id?: string;
+  _id?: string;
+  rating: number;
+  message: string;
+  createdAt: string;
+  client?: {
+    id?: string;
+    _id?: string;
+    userName?: string;
+    email?: string;
+  };
+  organisation?: {
+    id?: string;
+    _id?: string;
+    name?: string;
+  };
+}
+
+interface FeedbackStatistics {
+  total: number;
+  averageRating: number;
 }
 
 const managementItems: ManagementItem[] = [
@@ -108,6 +129,19 @@ const ManagePage = () => {
   // Notification modal
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
+  // Client feedback
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackList, setFeedbackList] = useState<ClientFeedbackItem[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackRefreshing, setFeedbackRefreshing] = useState(false);
+  const [feedbackPage, setFeedbackPage] = useState(1);
+  const [feedbackTotalPages, setFeedbackTotalPages] = useState(1);
+  const [feedbackStatistics, setFeedbackStatistics] =
+    useState<FeedbackStatistics>({
+      total: 0,
+      averageRating: 0,
+    });
+
   // Leave management view
   const [showLeaveManagement, setShowLeaveManagement] = useState(false);
 
@@ -155,24 +189,15 @@ const ManagePage = () => {
 
   const fetchCurrentUser = async () => {
     try {
-      const token = sessionStorage.getItem("token");
+      // Uses the shared cookie-based Axios client from AuthContext.
+      const response = await api.get("/auth/me");
+      const body = response.data;
+      const fetchedUser = body?.user ?? body?.data?.user ?? body?.data ?? body;
 
-      if (!token) {
-        setCurrentUser(user || null);
-        return;
-      }
-
-      const response = await axios.get(`${API_URL}/api/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
-
-      const fetchedUser = response.data?.user || null;
-
-      if (fetchedUser) {
+      if (fetchedUser?.id || fetchedUser?._id) {
         setCurrentUser(fetchedUser);
+      } else {
+        setCurrentUser(user || null);
       }
     } catch (err: any) {
       console.error("MANAGE USER ERROR:", err?.response?.data || err);
@@ -180,6 +205,76 @@ const ManagePage = () => {
       setLoading(false);
     }
   };
+
+  const fetchClientFeedback = async (page = 1, refreshing = false) => {
+    try {
+      if (refreshing) {
+        setFeedbackRefreshing(true);
+      } else {
+        setFeedbackLoading(true);
+      }
+
+      // api already has /api as its base URL and sends auth cookies.
+      const response = await api.get("/feedback", {
+        params: { page, limit: 10 },
+      });
+
+      const payload = response.data || {};
+      const nestedData = payload.data || {};
+
+      const list =
+        payload.feedback ||
+        payload.items ||
+        (Array.isArray(payload.data) ? payload.data : null) ||
+        nestedData.feedback ||
+        nestedData.items ||
+        [];
+
+      const pagination = payload.pagination || nestedData.pagination || {};
+      const statistics = payload.statistics || nestedData.statistics || {};
+
+      setFeedbackList(Array.isArray(list) ? list : []);
+      setFeedbackPage(Number(pagination.page || page));
+      setFeedbackTotalPages(
+        Math.max(1, Number(pagination.totalPages || pagination.pages || 1)),
+      );
+
+      setFeedbackStatistics({
+        total: Number(
+          statistics.totalFeedback ??
+            statistics.total ??
+            pagination.total ??
+            (Array.isArray(list) ? list.length : 0),
+        ),
+        averageRating: Number(
+          statistics.averageRating ??
+            statistics.avgRating ??
+            statistics.average ??
+            0,
+        ),
+      });
+    } catch (error: any) {
+      console.error(
+        "FETCH CLIENT FEEDBACK ERROR:",
+        error?.response?.data || error,
+      );
+
+      window.alert(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to load client feedback.",
+      );
+    } finally {
+      setFeedbackLoading(false);
+      setFeedbackRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showFeedbackModal) {
+      void fetchClientFeedback(1);
+    }
+  }, [showFeedbackModal]);
 
   const closeModal = () => {
     setActiveModal(null);
@@ -298,6 +393,13 @@ const ManagePage = () => {
       if (!canNotifyEmployees) return;
 
       setShowNotificationModal(true);
+      return;
+    }
+
+    if (item.title === "Client Feedback") {
+      if (!canManageUsers) return;
+
+      setShowFeedbackModal(true);
       return;
     }
 
@@ -961,6 +1063,301 @@ const ManagePage = () => {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CLIENT FEEDBACK MODAL */}
+      {showFeedbackModal && (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-5"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setShowFeedbackModal(false);
+            }
+          }}
+        >
+          <div
+            className="flex max-h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border shadow-2xl"
+            style={{
+              background: theme.background,
+              borderColor: theme.border,
+              color: theme.text,
+            }}
+          >
+            {/* HEADER */}
+            <div
+              className="flex items-center justify-between gap-4 border-b px-5 py-4 sm:px-6"
+              style={{ borderColor: theme.border }}
+            >
+              <div>
+                <h2 className="text-xl font-extrabold">Client Feedback</h2>
+                <p className="mt-1 text-xs" style={{ color: theme.muted }}>
+                  Review feedback submitted by your clients.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowFeedbackModal(false)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition hover:opacity-70"
+                style={{
+                  background: theme.primarySoft,
+                  color: theme.text,
+                }}
+                aria-label="Close feedback"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* STATISTICS */}
+            <div className="grid grid-cols-2 gap-3 p-4 sm:px-6 sm:py-5">
+              <div
+                className="rounded-xl border p-4"
+                style={{
+                  background: theme.white,
+                  borderColor: theme.border,
+                }}
+              >
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: theme.muted }}
+                >
+                  Total Feedback
+                </p>
+                <p className="mt-2 text-2xl font-extrabold">
+                  {feedbackStatistics.total}
+                </p>
+              </div>
+
+              <div
+                className="rounded-xl border p-4"
+                style={{
+                  background: theme.white,
+                  borderColor: theme.border,
+                }}
+              >
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: theme.muted }}
+                >
+                  Average Rating
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <Star size={21} fill="#E5A83B" color="#E5A83B" />
+                  <span className="text-2xl font-extrabold">
+                    {feedbackStatistics.averageRating.toFixed(1)}
+                  </span>
+                  <span className="text-xs" style={{ color: theme.muted }}>
+                    / 5
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* FEEDBACK CONTENT */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 sm:px-6">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm font-bold" style={{ color: theme.text }}>
+                  Recent Feedback
+                </p>
+
+                <button
+                  type="button"
+                  disabled={feedbackLoading || feedbackRefreshing}
+                  onClick={() => void fetchClientFeedback(feedbackPage, true)}
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition hover:opacity-75 disabled:opacity-50"
+                  style={{
+                    background: theme.primarySoft,
+                    color: theme.primary,
+                  }}
+                >
+                  <RefreshCw
+                    size={14}
+                    className={feedbackRefreshing ? "animate-spin" : ""}
+                  />
+                  Refresh
+                </button>
+              </div>
+
+              {feedbackLoading && feedbackList.length === 0 ? (
+                <div className="flex min-h-60 flex-col items-center justify-center">
+                  <Loader2
+                    size={32}
+                    className="animate-spin"
+                    style={{ color: theme.primary }}
+                  />
+                  <p className="mt-3 text-sm" style={{ color: theme.muted }}>
+                    Loading client feedback...
+                  </p>
+                </div>
+              ) : feedbackList.length === 0 ? (
+                <div className="flex min-h-60 flex-col items-center justify-center text-center">
+                  <div
+                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+                    style={{ background: theme.primarySoft }}
+                  >
+                    <MessageSquare size={30} style={{ color: theme.primary }} />
+                  </div>
+                  <h3 className="text-base font-bold">No feedback yet</h3>
+                  <p
+                    className="mt-2 max-w-xs text-sm"
+                    style={{ color: theme.muted }}
+                  >
+                    Client feedback will appear here when submitted.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void fetchClientFeedback(1, true)}
+                    className="mt-4 rounded-lg px-4 py-2 text-sm font-semibold"
+                    style={{
+                      background: theme.primarySoft,
+                      color: theme.primary,
+                    }}
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-3">
+                    {feedbackList.map((feedback, index) => {
+                      const clientName =
+                        feedback.client?.userName ||
+                        feedback.client?.email ||
+                        "Client";
+
+                      const organisationName =
+                        feedback.organisation?.name ||
+                        "Organisation not available";
+
+                      const createdDate = feedback.createdAt
+                        ? new Date(feedback.createdAt).toLocaleString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "Date unavailable";
+
+                      return (
+                        <div
+                          key={
+                            feedback.id ||
+                            feedback._id ||
+                            `${feedback.createdAt}-${index}`
+                          }
+                          className="rounded-xl border p-4 transition hover:shadow-sm"
+                          style={{
+                            background: theme.white,
+                            borderColor: theme.border,
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h3
+                                className="truncate text-sm font-extrabold"
+                                style={{ color: theme.text }}
+                              >
+                                {clientName}
+                              </h3>
+                              <p
+                                className="mt-1 text-xs"
+                                style={{ color: theme.muted }}
+                              >
+                                {organisationName}
+                              </p>
+                            </div>
+
+                            <div
+                              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5"
+                              style={{ background: theme.primarySoft }}
+                            >
+                              <Star size={14} fill="#E5A83B" color="#E5A83B" />
+                              <span className="text-xs font-extrabold">
+                                {Number(feedback.rating || 0)}/5
+                              </span>
+                            </div>
+                          </div>
+
+                          <p
+                            className="mt-4 whitespace-pre-wrap wrap-break-word text-sm leading-6"
+                            style={{ color: theme.text }}
+                          >
+                            {feedback.message || "No written comment provided."}
+                          </p>
+
+                          <div
+                            className="mt-4 flex items-center gap-2 border-t pt-3"
+                            style={{ borderColor: theme.border }}
+                          >
+                            <CalendarDays
+                              size={14}
+                              style={{ color: theme.muted }}
+                            />
+                            <span
+                              className="text-xs"
+                              style={{ color: theme.muted }}
+                            >
+                              {createdDate}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* PAGINATION */}
+                  <div
+                    className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"
+                    style={{ borderColor: theme.border }}
+                  >
+                    <button
+                      type="button"
+                      disabled={
+                        feedbackPage <= 1 ||
+                        feedbackLoading ||
+                        feedbackRefreshing
+                      }
+                      onClick={() => void fetchClientFeedback(feedbackPage - 1)}
+                      className="rounded-lg px-4 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{
+                        background: theme.primarySoft,
+                        color: theme.primary,
+                      }}
+                    >
+                      Previous
+                    </button>
+
+                    <span
+                      className="text-xs font-semibold"
+                      style={{ color: theme.muted }}
+                    >
+                      Page {feedbackPage} of {feedbackTotalPages}
+                    </span>
+
+                    <button
+                      type="button"
+                      disabled={
+                        feedbackPage >= feedbackTotalPages ||
+                        feedbackLoading ||
+                        feedbackRefreshing
+                      }
+                      onClick={() => void fetchClientFeedback(feedbackPage + 1)}
+                      className="rounded-lg px-4 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{
+                        background: theme.primarySoft,
+                        color: theme.primary,
+                      }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
